@@ -3,7 +3,7 @@ import httplib2
 from bs4 import BeautifulSoup
 import pandas as pd
 import os
-
+from tqdm.auto import tqdm
 
 # %%
 http = httplib2.Http()
@@ -60,6 +60,9 @@ def extract_champion_data(uri):
     divs = soup.find_all('div', {"class": "champion-stat-with-titlestyles__Wrapper-sc-18rahlm-0 rOzjO champion-statsstyles__AutoStats-sc-1kfvrng-3 bBdKGz"})
 
     mana = divs[0].find_all("p")[1].text.split(" / ")
+    for i in range(len(mana)):
+        if mana[i] == "-":
+            mana[i] = "0"
     mana = [int(x) for x in mana]
     mana_start = mana[0]
     mana_max = mana[1]
@@ -98,10 +101,9 @@ def extract_champion_data(uri):
 
     frame = frame.append(row, ignore_index=True)
 
-for link in soup.find_all('a', href=True):
+for link in tqdm(soup.find_all('a', href=True)):
     if "set3/champions/" in link['href']:
         extract_champion_data(link['href'])
-        break
 
 print(frame.head())
 # print(os.getcwd() + "\\data\\champion_info_scrape.csv")
