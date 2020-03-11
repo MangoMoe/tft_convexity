@@ -4,20 +4,22 @@ import pandas as pd
 import os
 
 champions = pd.read_csv(os.getcwd() + "\\data\\champion_info_scrape.csv")
-# st.write(champions[champions["name"].str.match("Gangplank")]["name"])
 
 champions_inventory = pd.read_csv(os.getcwd() + "\\cache\\champ_list.csv")
 store = pd.read_csv(os.getcwd() + "\\cache\\store.csv")
 
-# TODO cache this
-gold = 0
+with open(os.getcwd() + "\\cache\\gold.csv") as gold_file:
+    file_val = gold_file.read()
+    if file_val == "":
+        gold = 0
+    else:
+        gold = int(file_val)
 
 clear = st.button("Clear data")
 if clear:
     champions_inventory = pd.DataFrame(columns = ["name"])
     store = pd.DataFrame(columns = ["name", "cost"])
-
-# st.show(champions)
+    gold = 0
 
 list_all = st.checkbox("Show all champions")
 
@@ -40,7 +42,6 @@ def store_button(name, index, cost):
 def sell_inventory_button(name):
     global champions_inventory
     global gold
-    st.write(str(champions_inventory[champions_inventory["name"] == name].index[0]))
     select = st.sidebar.button("{}_{} ({}gp)".format(name, str(champions_inventory[champions_inventory["name"] == name].index[0]), int(champions_inventory[champions_inventory["name"] == name]["cost"].iloc[0])))
     if select:
         champions_inventory = champions_inventory.drop(champions_inventory[champions_inventory["name"] == name].index[0])
@@ -55,9 +56,21 @@ else:
         for name in champions[champions["name"].str.contains(search, case=False)]["name"]:
             champion_button(name)
 
-"Inventory"
+st.write("Gold: {}".format(gold))
+
+# add_gold = st.number_input("Add gold: ", format="%i", step=1, value=0)
+reset_gold = st.number_input("Reset gold to this amount: ", format="%i", step=1, value=gold)
+
+if reset_gold != gold:
+    gold = reset_gold
+# if add_gold != 0:
+#     gold += add_gold
+#     st.write("New gold: {}".format(gold))
+ 
+
+st.markdown("# Inventory")
 st.write(champions_inventory["name"])
-"Store"
+st.markdown("# Store")
 st.write(store)
 
 st.sidebar.markdown("## Sell")
@@ -73,3 +86,5 @@ for i, row in store.iterrows():
 # Caching stuff
 champions_inventory.to_csv(os.getcwd() + "\\cache\\champ_list.csv", index=False)
 store.to_csv(os.getcwd() + "\\cache\\store.csv", index=False)
+with open(os.getcwd() + "\\cache\\gold.csv", mode="w") as gold_file:
+    gold_file.write(str(gold))
