@@ -25,6 +25,13 @@ def champion_button(name):
         row = {"name":name, "cost":champions[champions["name"].str.match(name)]["cost"].iloc[0]}
         store = store.append(row, ignore_index=True)
 
+def store_button(name, index, cost):
+    global champions_inventory
+    global store
+    select = st.button("{}_{} ({}gp)".format(name, str(index), int(cost)))
+    if select:
+        champions_inventory = champions_inventory.append(champions[champions["name"].str.match(name)])
+        store = store.drop(store[store["name"] == name].index[0])
 
 if list_all:
     for name in champions["name"]:
@@ -36,9 +43,13 @@ else:
             champion_button(name)
 
 "Inventory"
-st.write(champions_inventory)
+st.write(champions_inventory["name"])
 "Store"
 st.write(store)
+
+# I know this is a faux pas, but there will only ever be 5 rows so its fine
+for i, row in store.iterrows():
+    store_button(row["name"], i, row["cost"])
 
 # Caching stuff
 champions_inventory.to_csv(os.getcwd() + "\\cache\\champ_list.csv", index=False)
