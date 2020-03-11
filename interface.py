@@ -9,6 +9,9 @@ champions = pd.read_csv(os.getcwd() + "\\data\\champion_info_scrape.csv")
 champions_inventory = pd.read_csv(os.getcwd() + "\\cache\\champ_list.csv")
 store = pd.read_csv(os.getcwd() + "\\cache\\store.csv")
 
+# TODO cache this
+gold = 0
+
 clear = st.button("Clear data")
 if clear:
     champions_inventory = pd.DataFrame(columns = ["name"])
@@ -28,10 +31,20 @@ def champion_button(name):
 def store_button(name, index, cost):
     global champions_inventory
     global store
-    select = st.button("{}_{} ({}gp)".format(name, str(index), int(cost)))
+    select = st.sidebar.button("{}_{} ({}gp)".format(name, str(index), int(cost)))
     if select:
         champions_inventory = champions_inventory.append(champions[champions["name"].str.match(name)])
         store = store.drop(store[store["name"] == name].index[0])
+
+# TODO you will probably have to add rows to your dataframe for items and current level and such
+def sell_inventory_button(name):
+    global champions_inventory
+    global gold
+    st.write(str(champions_inventory[champions_inventory["name"] == name].index[0]))
+    select = st.sidebar.button("{}_{} ({}gp)".format(name, str(champions_inventory[champions_inventory["name"] == name].index[0]), int(champions_inventory[champions_inventory["name"] == name]["cost"].iloc[0])))
+    if select:
+        champions_inventory = champions_inventory.drop(champions_inventory[champions_inventory["name"] == name].index[0])
+
 
 if list_all:
     for name in champions["name"]:
@@ -47,6 +60,12 @@ st.write(champions_inventory["name"])
 "Store"
 st.write(store)
 
+st.sidebar.markdown("## Sell")
+# I know this is a faux pas, but there will only ever be 5 rows so its fine
+for i, row in champions_inventory.iterrows():
+    sell_inventory_button(row["name"])
+
+st.sidebar.markdown("## Purchase")
 # I know this is a faux pas, but there will only ever be 5 rows so its fine
 for i, row in store.iterrows():
     store_button(row["name"], i, row["cost"])
