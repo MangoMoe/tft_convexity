@@ -33,18 +33,24 @@ def champion_button(name):
 def store_button(name, index, cost):
     global champions_inventory
     global store
-    select = st.sidebar.button("{}_{} ({}gp)".format(name, str(index), int(cost)))
+    global gold
+    st.write("Purchase {}_{} ({}gp)".format(name, str(index), int(cost)))
+    select = st.button("Purchase {}_{} ({}gp)".format(name, str(index), int(cost)))
     if select:
+        gold -= int(cost)
         champions_inventory = champions_inventory.append(champions[champions["name"].str.match(name)])
         store = store.drop(store[store["name"] == name].index[0])
 
 # TODO you will probably have to add rows to your dataframe for items and current level and such
-def sell_inventory_button(name):
+def sell_inventory_button(name, index):
     global champions_inventory
     global gold
-    select = st.sidebar.button("{}_{} ({}gp)".format(name, str(champions_inventory[champions_inventory["name"] == name].index[0]), int(champions_inventory[champions_inventory["name"] == name]["cost"].iloc[0])))
+    st.write("Sell {}_{} ({}gp)".format(name, index, int(champions_inventory[champions_inventory["name"] == name]["cost"].iloc[0])))
+    select = st.button("Sell {}_{} ({}gp)".format(name, index, int(champions_inventory[champions_inventory["name"] == name]["cost"].iloc[0])))
     if select:
-        champions_inventory = champions_inventory.drop(champions_inventory[champions_inventory["name"] == name].index[0])
+        st.write(champions_inventory[champions_inventory["name"] == name]["cost"].iloc[0])
+        gold += champions_inventory[champions_inventory["name"] == name]["cost"].iloc[0]
+        champions_inventory = champions_inventory.drop(index)
 
 
 if list_all:
@@ -58,33 +64,45 @@ else:
 
 st.write("Gold: {}".format(gold))
 
-# add_gold = st.number_input("Add gold: ", format="%i", step=1, value=0)
 reset_gold = st.number_input("Reset gold to this amount: ", format="%i", step=1, value=gold)
 
 if reset_gold != gold:
     gold = reset_gold
-# if add_gold != 0:
-#     gold += add_gold
-#     st.write("New gold: {}".format(gold))
  
 
-st.markdown("# Inventory")
-st.write(champions_inventory["name"])
-st.markdown("# Store")
-st.write(store)
-
-st.sidebar.markdown("## Sell")
-# I know this is a faux pas, but there will only ever be 5 rows so its fine
+st.markdown("## Sell")
+# I know this is a faux pas, but there will only ever be a few rows so its fine
 for i, row in champions_inventory.iterrows():
-    sell_inventory_button(row["name"])
+    sell_inventory_button(row["name"], i)
 
-st.sidebar.markdown("## Purchase")
+
+st.markdown("## Purchase")
 # I know this is a faux pas, but there will only ever be 5 rows so its fine
 for i, row in store.iterrows():
     store_button(row["name"], i, row["cost"])
+
+@st.cache
+def calculate_suggestion(inventory, store, gold):
+    if not store.empty:
+        return store.iloc[0]
+    else:
+        return None
+
+st.markdown("# Suggestion")
+sug = calculate_suggestion(champions_inventory, store, gold)
+if sug is not None:
+    st.write(sug["name"])
+else:
+    st.write("No Suggestion")
+
+# dummy button in case stuff doesn't refresh properly
+select = st.button("Refresh")
+doober = 1
+if select:
+    doober=0
 
 # Caching stuff
 champions_inventory.to_csv(os.getcwd() + "\\cache\\champ_list.csv", index=False)
 store.to_csv(os.getcwd() + "\\cache\\store.csv", index=False)
 with open(os.getcwd() + "\\cache\\gold.csv", mode="w") as gold_file:
-    gold_file.write(str(gold))
+    gold_file.write(str(int(gold)))
